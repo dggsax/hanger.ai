@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Hanger.Utilities;
@@ -30,6 +31,8 @@ namespace Hanger
         /// Kinect Sensor Being Used
         /// </summary>
         private KinectSensor sensor;
+
+        private Shirt shirt;
 
         /// <summary>
         /// Color of the joints that are tracked
@@ -68,7 +71,9 @@ namespace Hanger
         /// <param name="e"></param>
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            //// for drawing color pixels I guess
+            this.shirt = new Shirt(ChosenShirt);
+
+            // for drawing color pixels I guess
             this.drawingVisual = new DrawingVisual();
 
             // instantiate drawing host (this will be used to display skeleton on SkeletonCanvas
@@ -145,6 +150,8 @@ namespace Hanger
                             {
                                 // NOT WORKING
                                 this.DrawBonesAndJoints(skeleton, dc);
+
+                                this.DrawShirtToSkeleton(skeleton);
                             }
                         }
 
@@ -152,6 +159,51 @@ namespace Hanger
                     }
                 }
             }
+        }
+
+        private void DrawShirtToSkeleton(Skeleton skeleton)
+        {
+            // determine shoulder position
+            Joint centerShoulder = skeleton.Joints[JointType.ShoulderCenter];
+
+            if (!centerShoulder.TrackingState.Equals(JointTrackingState.Tracked))
+            {
+                Debug.WriteLine("Left shoulder not tracked, not drawing shirt");
+
+                return;
+            }
+
+            if (centerShoulder.TrackingState.Equals(JointTrackingState.Inferred))
+            {
+                Debug.WriteLine("Left shoulder position is inferred, not drawing shirt");
+
+                return;
+            }
+
+            // generate point of shoulder on screen
+            Point centerShoulderPoint = this.SkeletonPointToScreen(centerShoulder.Position);
+
+            // determine width
+            Joint leftShoulder = skeleton.Joints[JointType.ShoulderLeft];
+            Point leftShoulderPoint = this.SkeletonPointToScreen(leftShoulder.Position);
+
+            Joint rightShoulder = skeleton.Joints[JointType.ShoulderRight];
+            Point rightShoulderPoint = this.SkeletonPointToScreen(rightShoulder.Position);
+
+            double width = Point.Subtract(leftShoulderPoint, rightShoulderPoint).Length;
+
+            // determine height
+            Joint head = skeleton.Joints[JointType.Head];
+            Point headPoint = this.SkeletonPointToScreen(head.Position);
+
+            Joint hip = skeleton.Joints[JointType.HipCenter];
+            Point hipPoint = this.SkeletonPointToScreen(hip.Position);
+
+            double height = Point.Subtract(headPoint, hipPoint).Length;
+
+            Debug.WriteLine(centerShoulderPoint.ToString());
+
+            this.shirt.DrawImage(centerShoulderPoint, width * 1.75, height * 1.25);
         }
 
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)

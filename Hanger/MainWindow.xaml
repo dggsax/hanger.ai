@@ -14,5 +14,6 @@
     <Grid>
         <Image Name="KinectCamera" Width="640" Height="480" />
         <Canvas Name="SkeletonCanvas" Width="640" Height="480" />
+        <Canvas Name="ChosenShirt" Width="640" Height="480" />
     </Grid>
 </Window>
