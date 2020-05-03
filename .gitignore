@@ -1,0 +1,6 @@
+# Ignore VS files
+.vs/
+
+# Ignore object files
+[Oo]bj/
+[Bb]in/
