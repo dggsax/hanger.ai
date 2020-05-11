@@ -38,13 +38,15 @@ namespace Hanger
         /// Constructor for Shirt instance that takes in a reference to <see cref="MainWindow.ChosenShirt"/> object
         /// </summary>
         /// <param name="shirtCanvas"></param>
-        public Shirt(Canvas shirtCanvas)
+        public Shirt(Canvas shirtCanvas, BitmapSource bitmapSource)
         {
             // Set up drawing capabilities
             this.Init();
 
+            this.shirtBitmapSource = bitmapSource;
+
             // Load "MIT_Shirt.png"
-            this.LoadShirt();
+            //this.LoadShirt();
 
             // save reference to shirt image
             this.shirtCanvas = shirtCanvas;
@@ -100,19 +102,19 @@ namespace Hanger
             this.visualHost = new VisualHost { visual = shirtDrawing };
         }
 
-        private void LoadShirt()
-        {
-            Bitmap image = Resources.MIT_Shirt;
+        //private void LoadShirt()
+        //{
+        //    Bitmap image = Resources.MIT_Shirt;
 
-            this.LoadImageBitmapSource(image);
-        }
+        //    this.LoadImageBitmapSource(image);
+        //}
 
-        private void LoadImageBitmapSource(Bitmap image)
-        {
-            BitmapData imageData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, image.PixelFormat);
-            BitmapSource imageBitmap = BitmapSource.Create(image.Width, image.Height, image.HorizontalResolution, image.VerticalResolution, PixelFormats.Bgra32, null, imageData.Scan0, image.Width * image.Height * 4, imageData.Stride);
+        //private void LoadImageBitmapSource(Bitmap image)
+        //{
+        //    BitmapData imageData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, image.PixelFormat);
+        //    BitmapSource imageBitmap = BitmapSource.Create(image.Width, image.Height, image.HorizontalResolution, image.VerticalResolution, PixelFormats.Bgra32, null, imageData.Scan0, image.Width * image.Height * 4, imageData.Stride);
 
-            this.shirtBitmapSource = imageBitmap;
-        }
+        //    this.shirtBitmapSource = imageBitmap;
+        //}
     }
 }

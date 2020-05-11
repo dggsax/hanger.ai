@@ -26,6 +26,8 @@ namespace Hanger
         /// </summary>
         private VisualHost visualHost;
 
+        private ShirtManager shirtManager;
+
         /// <summary>
         /// Array of skeletons that we copy from <see cref="SkeletonFrame"/>
         /// </summary>
@@ -82,8 +84,10 @@ namespace Hanger
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
             _ = this.BeginSpeechRecognition();
-            
-            this.shirt = new Shirt(ChosenShirt);
+
+            this.shirtManager = new ShirtManager(ChosenShirt);
+
+            this.shirt = shirtManager.nextShirt();
 
             // for drawing color pixels I guess
             this.drawingVisual = new DrawingVisual();
