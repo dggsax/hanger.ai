@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Media;
 using Hanger.Utilities;
 using Microsoft.Kinect;
+using Microsoft.CognitiveServices.Speech;
+using System.Threading.Tasks;
 
 namespace Hanger
 {
@@ -12,6 +14,7 @@ namespace Hanger
     /// </summary>
     public partial class MainWindow : Window
     {
+
         /// <summary>
         /// For drawing images of skeleton and color output
         /// </summary>
@@ -59,6 +62,12 @@ namespace Hanger
         /// </summary>
         private const ColorImageFormat COLOR_IMAGE_FORMAT = ColorImageFormat.RgbResolution640x480Fps30;
 
+        /// <summary>
+        /// Different states for user depending on if they have said try on or not.
+        /// </summary>
+        private static int NOT_STARTED = 0;
+        private static int STARTED = 1;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -71,6 +80,7 @@ namespace Hanger
         /// <param name="e"></param>
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
+            RecognizeSpeechAsync();
             this.shirt = new Shirt(ChosenShirt);
 
             // for drawing color pixels I guess
@@ -302,6 +312,43 @@ namespace Hanger
             }
 
             drawingContext.DrawLine(drawPen, this.SkeletonPointToScreen(joint0.Position), this.SkeletonPointToScreen(joint1.Position));
+        }
+
+        static async Task RecognizeSpeechAsync()
+        {
+            var config =
+                SpeechConfig.FromSubscription(
+                    "295bb692e6cf43bd88b8f009c1da9be6",
+                    "eastus");
+
+            using (var recognizer = new SpeechRecognizer(config))
+            {
+                // We have a color frame (this is always true unless camera feed is cut)
+                if (recognizer != null)
+                {
+                    var result = await recognizer.RecognizeOnceAsync();
+                    switch (result.Reason)
+                    {
+                        case ResultReason.RecognizedSpeech:
+                            Debug.WriteLine($"We recognized: {result.Text}");
+                            break;
+                        case ResultReason.NoMatch:
+                            Debug.WriteLine($"NOMATCH: Speech could not be recognized.");
+                            break;
+                        case ResultReason.Canceled:
+                            var cancellation = CancellationDetails.FromResult(result);
+                            Debug.WriteLine($"CANCELED: Reason={cancellation.Reason}");
+
+                            if (cancellation.Reason == CancellationReason.Error)
+                            {
+                                Debug.WriteLine($"CANCELED: ErrorCode={cancellation.ErrorCode}");
+                                Debug.WriteLine($"CANCELED: ErrorDetails={cancellation.ErrorDetails}");
+                                Debug.WriteLine($"CANCELED: Did you update the subscription info?");
+                            }
+                            break;
+                    }
+                }   
+            }               
         }
     }
 }

@@ -63,6 +63,16 @@ namespace Hanger.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Black_shirt {
+            get {
+                object obj = ResourceManager.GetObject("Black_shirt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap MIT_Shirt {
             get {
                 object obj = ResourceManager.GetObject("MIT_Shirt", resourceCulture);
