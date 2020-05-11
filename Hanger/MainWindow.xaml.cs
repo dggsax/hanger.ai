@@ -6,6 +6,7 @@ using Hanger.Utilities;
 using Microsoft.Kinect;
 using Microsoft.CognitiveServices.Speech;
 using System.Threading.Tasks;
+using System;
 
 namespace Hanger
 {
@@ -80,7 +81,8 @@ namespace Hanger
         /// <param name="e"></param>
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            RecognizeSpeechAsync();
+            _ = this.BeginSpeechRecognition();
+            
             this.shirt = new Shirt(ChosenShirt);
 
             // for drawing color pixels I guess
@@ -127,6 +129,12 @@ namespace Hanger
             //}
         }
 
+        private async Task BeginSpeechRecognition()
+        {
+            Debug.WriteLine("Calling \"RecognizeSpeechAsync();\"");
+            await RecognizeSpeechAsync();
+        }
+        
         private void SensorOnAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             // Process the color frame
@@ -314,39 +322,66 @@ namespace Hanger
             drawingContext.DrawLine(drawPen, this.SkeletonPointToScreen(joint0.Position), this.SkeletonPointToScreen(joint1.Position));
         }
 
-        static async Task RecognizeSpeechAsync()
+        /// <summary>
+        /// Updates the value in the TextBlock with the text parameter
+        /// </summary>
+        /// <param name="text"></param>
+        private void SetText(string text)
+        {
+            // we need to use the Dispatcher to update WPF UI elements since this method gets
+            // called from the Async Task method which is a new thread, and only the main thread
+            // gets direct access to the UI elements.
+            this.Dispatcher.Invoke(() =>
+            {
+                RecognizedSpeech.Text = text;
+            });
+        }
+
+        private async Task RecognizeSpeechAsync()
         {
             var config =
                 SpeechConfig.FromSubscription(
                     "295bb692e6cf43bd88b8f009c1da9be6",
                     "eastus");
 
+            var stopRecognition = new TaskCompletionSource<int>();
+
             using (var recognizer = new SpeechRecognizer(config))
             {
                 // We have a color frame (this is always true unless camera feed is cut)
                 if (recognizer != null)
                 {
-                    var result = await recognizer.RecognizeOnceAsync();
-                    switch (result.Reason)
+                    recognizer.Recognizing += (s, e) =>
                     {
-                        case ResultReason.RecognizedSpeech:
-                            Debug.WriteLine($"We recognized: {result.Text}");
-                            break;
-                        case ResultReason.NoMatch:
-                            Debug.WriteLine($"NOMATCH: Speech could not be recognized.");
-                            break;
-                        case ResultReason.Canceled:
-                            var cancellation = CancellationDetails.FromResult(result);
-                            Debug.WriteLine($"CANCELED: Reason={cancellation.Reason}");
+                        string result = (string)e.Result.Text.ToString();
 
-                            if (cancellation.Reason == CancellationReason.Error)
-                            {
-                                Debug.WriteLine($"CANCELED: ErrorCode={cancellation.ErrorCode}");
-                                Debug.WriteLine($"CANCELED: ErrorDetails={cancellation.ErrorDetails}");
-                                Debug.WriteLine($"CANCELED: Did you update the subscription info?");
-                            }
-                            break;
-                    }
+                        this.SetText(result);
+
+                        Debug.WriteLine($"RECOGNIZING: Text={result}");
+                    };
+
+                    // this might be the one we want to use when checking to see if the user said "next" or something"
+                    recognizer.Recognized += (s, e) =>
+                    {
+                        if (e.Result.Reason == ResultReason.RecognizedSpeech)
+                        {
+                            string result = e.Result.Text;
+
+                            this.SetText(result);
+
+                            Debug.WriteLine($"RECOGNIZED: Text={result}");
+                        }
+                        else if (e.Result.Reason == ResultReason.NoMatch)
+                        {
+                            Debug.WriteLine($"NOMATCH: Speech could not be recognized");
+                        }
+                    };
+
+                    await recognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
+
+                    Task.WaitAny(new[] { stopRecognition.Task });
+
+                    await recognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
                 }   
             }               
         }

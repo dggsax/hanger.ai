@@ -2,5 +2,12 @@
 .vs/
 
 # Ignore object files
+.Debug/
+.Release/
 [Oo]bj/
 [Bb]in/
+
+# Ignore Emgu.CV packages since we're not using them...
+packages/Emgu.CV.4.2.0.3662/
+packages/Emgu.CV.runtime.windows.4.2.0.3662/
+packages/ZedGraph.5.1.7/
