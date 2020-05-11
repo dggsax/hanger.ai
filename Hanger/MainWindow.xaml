@@ -15,5 +15,13 @@
         <Image Name="KinectCamera" Width="640" Height="480" />
         <Canvas Name="SkeletonCanvas" Width="640" Height="480" />
         <Canvas Name="ChosenShirt" Width="640" Height="480" />
+        <TextBlock Name="RecognizedSpeech" HorizontalAlignment="Left" Height="44.5" Margin="0,524.5,0,0" TextWrapping="Wrap" Text="Speech Recognition Text will go here!" VerticalAlignment="Top" Width="792" FontSize="16" FontWeight="Bold">
+            <TextBlock.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="White" Offset="0"/>
+                    <GradientStop Color="#FFCCF0F1" Offset="1"/>
+                </LinearGradientBrush>
+            </TextBlock.Background>
+        </TextBlock>
     </Grid>
 </Window>
