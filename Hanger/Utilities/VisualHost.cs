@@ -3,6 +3,7 @@ using System.Windows.Media;
 
 namespace Hanger.Utilities
 {
+    // Idk what this does but we need it apparently
     class VisualHost : UIElement
     {
         public Visual visual { get; set; }

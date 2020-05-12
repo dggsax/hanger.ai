@@ -1,20 +1,50 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+
 using Hanger.Utilities;
-using Microsoft.Kinect;
 using Microsoft.CognitiveServices.Speech;
-using System.Threading.Tasks;
-using System;
+using Microsoft.Kinect;
 
 namespace Hanger
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Controller for MainWindow
     /// </summary>
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// Thickness of joints drawn
+        /// </summary>
+        private const double JointThickness = 3;
+
+        /// <summary>
+        /// Format for color frames, must be same as DEPTH_IMAGE_FORMAT
+        /// </summary>
+        private const ColorImageFormat COLOR_IMAGE_FORMAT = ColorImageFormat.RgbResolution640x480Fps30;
+
+        /// <summary>
+        /// Color of the joints that are tracked
+        /// </summary>
+        private readonly Brush trackedJointBrush = new SolidColorBrush(Color.FromArgb(255, 68, 192, 68));
+
+        /// <summary>
+        /// Color of an inferred joint (one that Kinect assumes is there)
+        /// </summary>
+        private readonly Brush inferredJointBrush = Brushes.Yellow;
+
+        /// <summary>
+        /// Color of an inferred bone
+        /// </summary>
+        private readonly Pen inferredBonePen = new Pen(Brushes.Gray, 1);
+
+        /// <summary>
+        /// Color of tracked bone
+        /// </summary>
+        private readonly Pen trackedBonePen = new Pen(Brushes.Green, 6);
+
         /// <summary>
         /// Whether we want to view debug stuff on the window
         /// </summary>
@@ -51,52 +81,28 @@ namespace Hanger
         private Shirt shirt;
 
         /// <summary>
-        /// Color of the joints that are tracked
+        /// Initializes a new instance of the <see cref="MainWindow" /> class.
         /// </summary>
-        private readonly Brush trackedJointBrush = new SolidColorBrush(Color.FromArgb(255, 68, 192, 68));
-
-        /// <summary>
-        /// Color of an inferred joint (one that Kinect assumes is there)
-        /// </summary>
-        private readonly Brush inferredJointBrush = Brushes.Yellow;
-
-        /// <summary>
-        /// Color of an inferred bone
-        /// </summary>
-        private readonly Pen inferredBonePen = new Pen(Brushes.Gray, 1);
-
-        /// <summary>
-        /// Color of tracked bone
-        /// </summary>
-        private readonly Pen trackedBonePen = new Pen(Brushes.Green, 6);
-
-        /// <summary>
-        /// Format for color frames, must be same as DEPTH_IMAGE_FORMAT
-        /// </summary>
-        private const ColorImageFormat COLOR_IMAGE_FORMAT = ColorImageFormat.RgbResolution640x480Fps30;
-
         public MainWindow()
         {
-            InitializeComponent();
+            this.InitializeComponent();
         }
 
         /// <summary>
         /// Executes when ready to go
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <param name="sender">Sender</param>
+        /// <param name="e">Event</param>
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            _ = this.BeginSpeechRecognition();
+            this.BeginSpeechRecognition();
 
-            this.shirtManager = new ShirtManager(ChosenShirt);
+            // set up shir manager and load first shirt onto skeleton
+            this.shirtManager = new ShirtManager(ChosenShirt, PreviousShirt, NextShirt, this.Dispatcher);
+            this.shirt = this.shirtManager.NextShirt();
 
-            this.shirt = shirtManager.nextShirt();
-
-            // for drawing color pixels I guess
+            // for drawing skeleton bones and joints onto body
             this.drawingVisual = new DrawingVisual();
-
-            // instantiate drawing host (this will be used to display skeleton on SkeletonCanvas
             this.visualHost = new VisualHost { visual = this.drawingVisual };
 
             // Select Sensor to be used
@@ -112,7 +118,10 @@ namespace Hanger
             }
 
             // execute only if we successfully acquired a sensor
-            if (this.sensor == null) return;
+            if (this.sensor == null)
+            {
+                return;
+            }
 
             // enable the necessary streams
             this.sensor.ColorStream.Enable();
@@ -120,7 +129,7 @@ namespace Hanger
             this.sensor.DepthStream.Enable();
 
             // add event handlers for the frames
-            this.sensor.AllFramesReady += SensorOnAllFramesReady;
+            this.sensor.AllFramesReady += this.SensorOnAllFramesReady;
 
             try
             {
@@ -130,19 +139,21 @@ namespace Hanger
             {
                 this.sensor = null;
             }
-
-            //if (null == this.sensor)
-            //{
-            //    this.StatusBarText.Text = "No Kinect ready";
-            //}
         }
 
-        private async Task BeginSpeechRecognition()
+        /// <summary>
+        /// Tells <see cref="SpeechRecognizer"/> to start listening!
+        /// </summary>
+        private async void BeginSpeechRecognition()
         {
-            Debug.WriteLine("Calling \"RecognizeSpeechAsync();\"");
-            await RecognizeSpeechAsync();
+            await this.RecognizeSpeechAsync();
         }
 
+        /// <summary>
+        /// When all the frames we need from the kinect sensor are ready, process them
+        /// </summary>
+        /// <param name="sender">Sender</param>
+        /// <param name="e">Event</param>
         private void SensorOnAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             // Process the color frame
@@ -189,6 +200,10 @@ namespace Hanger
             }
         }
 
+        /// <summary>
+        /// Provided with a skeleton, draw the <see cref="shirt"/> to the specified skeleton
+        /// </summary>
+        /// <param name="skeleton">Skeleton receiving the shirt</param>
         private void DrawShirtToSkeleton(Skeleton skeleton)
         {
             // determine shoulder position
@@ -229,17 +244,25 @@ namespace Hanger
 
             double height = Point.Subtract(headPoint, hipPoint).Length;
 
-            Debug.WriteLine(centerShoulderPoint.ToString());
-
-            this.shirt.DrawImage(centerShoulderPoint, width * 1.75, height * 1.25);
+            this.shirt.PlaceShirtToPoint(centerShoulderPoint, width * 1.75, height * 1.25);
         }
 
+        /// <summary>
+        /// Executed when window closes
+        /// </summary>
+        /// <param name="sender">Sender</param>
+        /// <param name="e">Event</param>
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             // If sensor exists, then stop it as we leave
-            sensor?.Stop();
+            this.sensor?.Stop();
         }
 
+        /// <summary>
+        /// Draw all the bones for a skeleton
+        /// </summary>
+        /// <param name="skeleton">Skeleton being drawn</param>
+        /// <param name="drawingContext">Context being drawn to</param>
         private void DrawBonesAndJoints(Skeleton skeleton, DrawingContext drawingContext)
         {
             // Render Torso
@@ -292,8 +315,11 @@ namespace Hanger
             }
         }
 
-        public double JointThickness = 3;
-
+        /// <summary>
+        /// Map a <see cref="SkeletonPoint"/> to <see cref="ColorImagePoint"/> that is consistent with the skeleton's position in the color video
+        /// </summary>
+        /// <param name="jointPosition">Position of joint in skeleton space</param>
+        /// <returns>Position of joint in 2D image space</returns>
         private Point SkeletonPointToScreen(SkeletonPoint jointPosition)
         {
             ColorImagePoint colorImagePoint =
@@ -302,6 +328,13 @@ namespace Hanger
             return new Point(colorImagePoint.X, colorImagePoint.Y);
         }
 
+        /// <summary>
+        /// Draw a bone and it's joints
+        /// </summary>
+        /// <param name="skeleton">Skeleton object who's bone is being drawn</param>
+        /// <param name="drawingContext">Context being drawn to</param>
+        /// <param name="jointType0">Start joint</param>
+        /// <param name="jointType1">End joint</param>
         private void DrawBone(Skeleton skeleton, DrawingContext drawingContext, JointType jointType0, JointType jointType1)
         {
             Joint joint0 = skeleton.Joints[jointType0];
@@ -334,7 +367,7 @@ namespace Hanger
         /// <summary>
         /// Updates the value in the TextBlock with the text parameter
         /// </summary>
-        /// <param name="text"></param>
+        /// <param name="text">Text to be displayed</param>
         private void SetText(string text)
         {
             // we need to use the Dispatcher to update WPF UI elements since this method gets
@@ -346,15 +379,19 @@ namespace Hanger
             });
         }
 
+        /// <summary>
+        /// Check text to see if a specific command is uttered
+        /// </summary>
+        /// <param name="text">Text recognized by <see cref="SpeechRecognizer"/> to be analyzed for command syntax</param>
         private void ProcessCommand(string text)
         {
             if (text.ToLower().Contains("next"))
             {
-                this.shirt = this.shirtManager.nextShirt();
+                this.shirt = this.shirtManager.NextShirt();
             }
             else if (text.ToLower().Contains("back") || text.ToLower().Contains("previous"))
             {
-                this.shirt = this.shirtManager.previousShirt();
+                this.shirt = this.shirtManager.PreviousShirt();
             }
             else if (text.ToLower().Contains("debug"))
             {
@@ -362,6 +399,10 @@ namespace Hanger
             }
         }
 
+        /// <summary>
+        /// Creates an asynchronous task that will continually listen to user speech
+        /// </summary>
+        /// <returns>Task object to be executed</returns>
         private async Task RecognizeSpeechAsync()
         {
             // Please don't abuse our API key ❤

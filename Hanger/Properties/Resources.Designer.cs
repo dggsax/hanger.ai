@@ -79,5 +79,25 @@ namespace Hanger.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap TSU_Shirt {
+            get {
+                object obj = ResourceManager.GetObject("TSU_Shirt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Tufts_Shirt {
+            get {
+                object obj = ResourceManager.GetObject("Tufts_Shirt_removebg_preview", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

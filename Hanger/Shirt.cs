@@ -1,95 +1,58 @@
-﻿using Hanger.Properties;
-using Hanger.Utilities;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+
+using Hanger.Utilities;
 using Point = System.Windows.Point;
 
 namespace Hanger
 {
+    /// <summary>
+    /// Instance used to store bitmap data for a shirt and to render said shirt
+    /// </summary>
     class Shirt
     {
         /// <summary>
         /// Image for shirt that is rendered in <see cref="MainWindow"/>
         /// </summary>
-        public Canvas shirtCanvas;
+        private readonly Canvas ShirtCanvas;
 
         /// <summary>
-        /// Visual Host for storing and displaying <see cref="shirtDrawing"/> onto the <see cref="shirtCanvas"/>
+        /// Visual Host for storing and displaying <see cref="shirtDrawing"/> onto the <see cref="ShirtCanvas"/>
         /// </summary>
         private VisualHost visualHost;
-
-        /// <summary>
-        /// Generated Bitmap Source of image
-        /// </summary>
-        private BitmapSource shirtBitmapSource;
 
         /// <summary>
         /// Visual where we draw image at a specific location
         /// </summary>
         private DrawingVisual shirtDrawing;
 
-        private Point previousPoint = new Point(0, 0);
+        /// <summary>
+        /// The previous destination that the shirt was rendered at
+        /// </summary>
+        private Point previousDestination = new Point(0, 0);
 
         /// <summary>
-        /// Constructor for Shirt instance that takes in a reference to <see cref="MainWindow.ChosenShirt"/> object
+        /// Gets or sets Bitmap Source of image
         /// </summary>
-        /// <param name="shirtCanvas"></param>
+        public BitmapSource ShirtBitmapSource { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shirt" /> class.
+        /// </summary>
+        /// <param name="shirtCanvas">reference to <see cref="Canvas"/> object to display image to</param>
+        /// <param name="bitmapSource">render-able bitmap source for shirt image</param>
         public Shirt(Canvas shirtCanvas, BitmapSource bitmapSource)
         {
             // Set up drawing capabilities
             this.Init();
-
-            this.shirtBitmapSource = bitmapSource;
-
-            // Load "MIT_Shirt.png"
-            //this.LoadShirt();
-
-            // save reference to shirt image
-            this.shirtCanvas = shirtCanvas;
+            this.ShirtBitmapSource = bitmapSource;
+            this.ShirtCanvas = shirtCanvas;
 
             // Draw image at (0, 0)
             Point initialDestination = new Point(0, 0);
-
-            this.DrawImage(initialDestination);
-        }
-
-        public void DrawImage(Point destination, double width, double height)
-        {
-            double difference = Point.Subtract(this.previousPoint, destination).Length;
-
-            if (difference < 1.5)
-            {
-                this.previousPoint = destination;
-
-                return;
-            }
-
-            shirtCanvas.Children.Clear();
-
-            double x = destination.X - width / 2;
-            double y = destination.Y - 10;
-
-            using (DrawingContext dc = this.shirtDrawing.RenderOpen())
-            {
-                dc.DrawImage(this.shirtBitmapSource,
-                             new Rect(x, y, width, height));
-            }
-
-            shirtCanvas.Children.Add(this.visualHost);
-
-            this.previousPoint = destination;
-        }
-
-        public void DrawImage(Point destination)
-        {
-            double width = this.shirtBitmapSource.Width;
-            double height = this.shirtBitmapSource.Height;
-
-            this.DrawImage(destination, width, height);
+            this.PlaceImageToPoint(initialDestination);
         }
 
         /// <summary>
@@ -99,22 +62,55 @@ namespace Hanger
         {
             this.shirtDrawing = new DrawingVisual();
 
-            this.visualHost = new VisualHost { visual = shirtDrawing };
+            this.visualHost = new VisualHost { visual = this.shirtDrawing };
         }
 
-        //private void LoadShirt()
-        //{
-        //    Bitmap image = Resources.MIT_Shirt;
+        /// <summary>
+        /// Given a destination, Place the image there with the image's default width and height
+        /// </summary>
+        /// <param name="destination">Point object where top left of image will go</param>
+        public void PlaceImageToPoint(Point destination)
+        {
+            double width = this.ShirtBitmapSource.Width;
+            double height = this.ShirtBitmapSource.Height;
 
-        //    this.LoadImageBitmapSource(image);
-        //}
+            this.PlaceShirtToPoint(destination, width, height);
+        }
 
-        //private void LoadImageBitmapSource(Bitmap image)
-        //{
-        //    BitmapData imageData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, image.PixelFormat);
-        //    BitmapSource imageBitmap = BitmapSource.Create(image.Width, image.Height, image.HorizontalResolution, image.VerticalResolution, PixelFormats.Bgra32, null, imageData.Scan0, image.Width * image.Height * 4, imageData.Stride);
+        /// <summary>
+        /// Place shirt to (x - width*(1/2), y - 10) of specified destination, with a specific height and width
+        /// </summary>
+        /// <param name="destination">The point we will be using to shift and place the shirt</param>
+        /// <param name="width">The desired width of the image</param>
+        /// <param name="height">The desired height of the image</param>
+        public void PlaceShirtToPoint(Point destination, double width, double height)
+        {
+            // determine the difference between the newly requested destination and the previous destination
+            double difference = Point.Subtract(this.previousDestination, destination).Length;
 
-        //    this.shirtBitmapSource = imageBitmap;
-        //}
+            if (difference < 1.5)
+            {
+                this.previousDestination = destination;
+
+                return;
+            }
+
+            this.ShirtCanvas.Children.Clear();
+
+            double x = destination.X - (width / 2);
+            double y = destination.Y - 10;
+
+            using (DrawingContext dc = this.shirtDrawing.RenderOpen())
+            {
+                dc.DrawImage(
+                    this.ShirtBitmapSource,
+                    new Rect(x, y, width, height));
+            }
+
+            this.ShirtCanvas.Children.Add(this.visualHost);
+
+            // track previous point, could be better to use moving average but ⏳
+            this.previousDestination = destination;
+        }
     }
 }

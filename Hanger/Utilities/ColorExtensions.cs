@@ -1,12 +1,8 @@
-﻿using Microsoft.Kinect;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media.Imaging;
+
+using Microsoft.Kinect;
 
 namespace Hanger
 {
@@ -41,6 +37,11 @@ namespace Hanger
 
         #region Public Methods
 
+        /// <summary>
+        /// Generates <see cref="BitmapSource"/> for <see cref="ColorImageFrame"/>
+        /// </summary>
+        /// <param name="frame">Frame we need bitmap for</param>
+        /// <returns>Bitmap for frame</returns>
         public static BitmapSource ToBitmap(this ColorImageFrame frame)
         {
             if (bitmap == null)
@@ -67,9 +68,8 @@ namespace Hanger
             bitmap.Unlock();
 
             return bitmap;
-
-
         }
+
         #endregion
     }
 }

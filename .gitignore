@@ -11,3 +11,6 @@
 packages/Emgu.CV.4.2.0.3662/
 packages/Emgu.CV.runtime.windows.4.2.0.3662/
 packages/ZedGraph.5.1.7/
+
+# Ignore stuff from Stylecop
+StyleCop.Cache

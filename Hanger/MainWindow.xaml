@@ -17,14 +17,16 @@
                 <GradientStop Color="#FFF15459" Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
-        <Image Name="PreviousShirt" Height="200" Margin="0,119.833,640,249.167" VerticalAlignment="Center"/>
-        <Image Name="NextShirt" Height="200" Margin="640,119.833,0,249.167" VerticalAlignment="Center"/>
         <Image Name="KinectCamera" Width="640" Height="480" />
         <Canvas Name="SkeletonCanvas" Width="640" Height="480" />
         <Canvas Name="ChosenShirt" Width="640" Height="480" />
+        <Image Name="PreviousShirt" Height="200" Margin="0,196,640,173" VerticalAlignment="Center"/>
+        <Image Name="NextShirt" Height="200" Margin="640,196,0,173" VerticalAlignment="Center"/>
         <TextBlock Name="RecognizedSpeech" HorizontalAlignment="Left" Height="44.5" Margin="0,524.5,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="792" FontSize="16" FontWeight="Bold"/>
         <TextBlock HorizontalAlignment="Center" Height="34.5" Margin="0,5,0,0" TextWrapping="Wrap" Text="hanger.ai" VerticalAlignment="Top" Width="208.5" FontSize="24" FontStretch="ExtraExpanded" TextAlignment="Center" Foreground="#FF222222" FontWeight="Bold"/>
         <TextBlock HorizontalAlignment="Left" Height="22" Margin="505.25,17.5,0,0" TextWrapping="Wrap" Text="made with ❤ by Hidai and Gonzo" VerticalAlignment="Top" Width="186" FontStyle="Italic"/>
         <TextBlock HorizontalAlignment="Left" Height="22" TextWrapping="Wrap" Text="6.835 Final Project" VerticalAlignment="Top" Width="100.667" FontStyle="Italic" Margin="172.417,17.5,0,0"/>
+        <TextBlock HorizontalAlignment="Left" Height="46" Margin="0,137.05,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="84"><Run FontWeight="Bold" Text="Try saying"/><LineBreak/><Run FontWeight="Bold" Text="&quot;Previous Shirt&quot;"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Height="46" Margin="721,150,-13,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="84"><Run FontWeight="Bold" Text="Try saying"/><LineBreak/><Run FontWeight="Bold" Text="&quot;Next shirt&quot;"/></TextBlock>
     </Grid>
 </Window>
