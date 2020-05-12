@@ -3,25 +3,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Hanger"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="800" Loaded="WindowLoaded" Closing="WindowClosing">
+        Title="MainWindow" Height="600" Width="800" Loaded="WindowLoaded" Closing="WindowClosing" Background="{x:Null}">
     <Window.Resources>
         <SolidColorBrush x:Key="MediumGreyBrush" Color="#ff6e6e6e"/>
         <SolidColorBrush x:Key="KinectPurpleBrush" Color="#ff52318f"/>
         <SolidColorBrush x:Key="KinectBlueBrush" Color="#ff00BCF2"/>
     </Window.Resources>
     <Grid>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="#FFFEFEFE" Offset="0.059"/>
+                <GradientStop Color="#FFF15459" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Image Name="PreviousShirt" Height="200" Margin="0,119.833,640,249.167" VerticalAlignment="Center"/>
+        <Image Name="NextShirt" Height="200" Margin="640,119.833,0,249.167" VerticalAlignment="Center"/>
         <Image Name="KinectCamera" Width="640" Height="480" />
         <Canvas Name="SkeletonCanvas" Width="640" Height="480" />
         <Canvas Name="ChosenShirt" Width="640" Height="480" />
-        <TextBlock Name="RecognizedSpeech" HorizontalAlignment="Left" Height="44.5" Margin="0,524.5,0,0" TextWrapping="Wrap" Text="Speech Recognition Text will go here!" VerticalAlignment="Top" Width="792" FontSize="16" FontWeight="Bold">
-            <TextBlock.Background>
-                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                    <GradientStop Color="White" Offset="0"/>
-                    <GradientStop Color="#FFCCF0F1" Offset="1"/>
-                </LinearGradientBrush>
-            </TextBlock.Background>
-        </TextBlock>
+        <TextBlock Name="RecognizedSpeech" HorizontalAlignment="Left" Height="44.5" Margin="0,524.5,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="792" FontSize="16" FontWeight="Bold"/>
+        <TextBlock HorizontalAlignment="Center" Height="34.5" Margin="0,5,0,0" TextWrapping="Wrap" Text="hanger.ai" VerticalAlignment="Top" Width="208.5" FontSize="24" FontStretch="ExtraExpanded" TextAlignment="Center" Foreground="#FF222222" FontWeight="Bold"/>
+        <TextBlock HorizontalAlignment="Left" Height="22" Margin="505.25,17.5,0,0" TextWrapping="Wrap" Text="made with ❤ by Hidai and Gonzo" VerticalAlignment="Top" Width="186" FontStyle="Italic"/>
+        <TextBlock HorizontalAlignment="Left" Height="22" TextWrapping="Wrap" Text="6.835 Final Project" VerticalAlignment="Top" Width="100.667" FontStyle="Italic" Margin="172.417,17.5,0,0"/>
     </Grid>
 </Window>

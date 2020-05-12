@@ -15,6 +15,10 @@ namespace Hanger
     /// </summary>
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// Whether we want to view debug stuff on the window
+        /// </summary>
+        private bool DEBUG = false;
 
         /// <summary>
         /// For drawing images of skeleton and color output
@@ -26,8 +30,6 @@ namespace Hanger
         /// </summary>
         private VisualHost visualHost;
 
-        private ShirtManager shirtManager;
-
         /// <summary>
         /// Array of skeletons that we copy from <see cref="SkeletonFrame"/>
         /// </summary>
@@ -38,6 +40,14 @@ namespace Hanger
         /// </summary>
         private KinectSensor sensor;
 
+        /// <summary>
+        /// Object keeping track of shirts
+        /// </summary>
+        private ShirtManager shirtManager;
+
+        /// <summary>
+        /// Current instance of shirt
+        /// </summary>
         private Shirt shirt;
 
         /// <summary>
@@ -64,12 +74,6 @@ namespace Hanger
         /// Format for color frames, must be same as DEPTH_IMAGE_FORMAT
         /// </summary>
         private const ColorImageFormat COLOR_IMAGE_FORMAT = ColorImageFormat.RgbResolution640x480Fps30;
-
-        /// <summary>
-        /// Different states for user depending on if they have said try on or not.
-        /// </summary>
-        private static int NOT_STARTED = 0;
-        private static int STARTED = 1;
 
         public MainWindow()
         {
@@ -102,11 +106,11 @@ namespace Hanger
                 {
                     // found a potential sensor that's connected, so now we use it
                     this.sensor = potentialSensor;
-                    
+
                     break;
                 }
             }
-            
+
             // execute only if we successfully acquired a sensor
             if (this.sensor == null) return;
 
@@ -126,7 +130,7 @@ namespace Hanger
             {
                 this.sensor = null;
             }
-            
+
             //if (null == this.sensor)
             //{
             //    this.StatusBarText.Text = "No Kinect ready";
@@ -138,7 +142,7 @@ namespace Hanger
             Debug.WriteLine("Calling \"RecognizeSpeechAsync();\"");
             await RecognizeSpeechAsync();
         }
-        
+
         private void SensorOnAllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             // Process the color frame
@@ -170,8 +174,10 @@ namespace Hanger
                         {
                             if (skeleton.TrackingState == SkeletonTrackingState.Tracked)
                             {
-                                // NOT WORKING
-                                this.DrawBonesAndJoints(skeleton, dc);
+                                if (this.DEBUG)
+                                {
+                                    this.DrawBonesAndJoints(skeleton, dc);
+                                }
 
                                 this.DrawShirtToSkeleton(skeleton);
                             }
@@ -190,14 +196,14 @@ namespace Hanger
 
             if (!centerShoulder.TrackingState.Equals(JointTrackingState.Tracked))
             {
-                Debug.WriteLine("Left shoulder not tracked, not drawing shirt");
+                Debug.WriteLine("Center shoulder not tracked, not drawing shirt");
 
                 return;
             }
 
             if (centerShoulder.TrackingState.Equals(JointTrackingState.Inferred))
             {
-                Debug.WriteLine("Left shoulder position is inferred, not drawing shirt");
+                Debug.WriteLine("Center shoulder position is inferred, not drawing shirt");
 
                 return;
             }
@@ -290,10 +296,9 @@ namespace Hanger
 
         private Point SkeletonPointToScreen(SkeletonPoint jointPosition)
         {
-            //            ColorImagePoint colorImagePoint = this.sensor.CoordinateMapper.MapSkeletonPointToColorPoint(skeletonPoint, COLOR_IMAGE_FORMAT);
             ColorImagePoint colorImagePoint =
                 this.sensor.CoordinateMapper.MapSkeletonPointToColorPoint(jointPosition, COLOR_IMAGE_FORMAT);
-            
+
             return new Point(colorImagePoint.X, colorImagePoint.Y);
         }
 
@@ -341,8 +346,25 @@ namespace Hanger
             });
         }
 
+        private void ProcessCommand(string text)
+        {
+            if (text.ToLower().Contains("next"))
+            {
+                this.shirt = this.shirtManager.nextShirt();
+            }
+            else if (text.ToLower().Contains("back") || text.ToLower().Contains("previous"))
+            {
+                this.shirt = this.shirtManager.previousShirt();
+            }
+            else if (text.ToLower().Contains("debug"))
+            {
+                this.DEBUG = !this.DEBUG;
+            }
+        }
+
         private async Task RecognizeSpeechAsync()
         {
+            // Please don't abuse our API key ❤
             var config =
                 SpeechConfig.FromSubscription(
                     "295bb692e6cf43bd88b8f009c1da9be6",
@@ -352,42 +374,43 @@ namespace Hanger
 
             using (var recognizer = new SpeechRecognizer(config))
             {
-                // We have a color frame (this is always true unless camera feed is cut)
-                if (recognizer != null)
+                // Ran whenever system is in the process of Recognizing voice inputs
+                recognizer.Recognizing += (s, e) =>
                 {
-                    recognizer.Recognizing += (s, e) =>
-                    {
-                        string result = (string)e.Result.Text.ToString();
+                    string result = (string)e.Result.Text.ToString();
 
+                    if (this.DEBUG)
+                    {
                         this.SetText(result);
+                    }
+                };
 
-                        Debug.WriteLine($"RECOGNIZING: Text={result}");
-                    };
-
-                    // this might be the one we want to use when checking to see if the user said "next" or something"
-                    recognizer.Recognized += (s, e) =>
+                // this might be the one we want to use when checking to see if the user said "next" or something"
+                recognizer.Recognized += (s, e) =>
+                {
+                    if (e.Result.Reason == ResultReason.RecognizedSpeech)
                     {
-                        if (e.Result.Reason == ResultReason.RecognizedSpeech)
-                        {
-                            string result = e.Result.Text;
+                        string result = e.Result.Text;
 
+                        if (this.DEBUG)
+                        {
                             this.SetText(result);
-
-                            Debug.WriteLine($"RECOGNIZED: Text={result}");
                         }
-                        else if (e.Result.Reason == ResultReason.NoMatch)
-                        {
-                            Debug.WriteLine($"NOMATCH: Speech could not be recognized");
-                        }
-                    };
 
-                    await recognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
+                        this.ProcessCommand(result);
+                    }
+                    else if (e.Result.Reason == ResultReason.NoMatch)
+                    {
+                        Debug.WriteLine($"NOMATCH: Speech could not be recognized");
+                    }
+                };
 
-                    Task.WaitAny(new[] { stopRecognition.Task });
+                await recognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
 
-                    await recognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
-                }   
-            }               
+                Task.WaitAny(new[] { stopRecognition.Task });
+
+                await recognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
+            }
         }
     }
 }
